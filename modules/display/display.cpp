@@ -3,6 +3,8 @@
 #include "mbed.h"
 #include "arm_book_lib.h"
 #include "display.h"
+#include "pc_serial_com.h"
+
 
 //=====[Declaration of private defines]========================================
 
@@ -96,6 +98,29 @@ typedef struct{
 
 //=====[Declaration and initialization of public global objects]===============
 
+/* PINES PARA EL USO DEL DISPLAY, segun display.connection
+ * INTERFAZ PARALELO 8bits  D0-D7
+ * INTERFAZ PARALELO 4bits  D4-D7
+ * INTERFAZ I2C             I2C1_SDA, I2C1_SCL  
+ * INTERFAZ SPI             SPI1_MOSI, SPI1_MISO, SPI1_SCK   
+ */
+
+/* ARBOL DE FUNCIONES
+ * FUNCION                      FUNCIONES QUE USA
+ * displayInit                  displayCodeWrite
+ * displayCharPositionWrite     displayCodeWrite
+ * displayStringWrite           displayCodeWrite
+ * displayCodeWrite             displayPinWrite, displayDataBusWrite
+ * displayDataBusWrite          displayPinWrite
+ * displayPinWrite              -----
+ */
+
+/* 
+ * lock() y unlock() sirven para hacer exclusion mutua, es decir bloquear un recurso para que no
+ * pueda ser usada desde otro lado. En esta interfaz si es necesario, se hace cuando se utiliza el metodo write
+ * de la calse SPI, ya que por ese bus pueden existir varios dator y varios dispositivos que escriban sobre el mismo
+ */ 
+ 
 DigitalOut displayD0( D0 );
 DigitalOut displayD1( D1 );
 DigitalOut displayD2( D2 );
@@ -295,6 +320,8 @@ void displayCharPositionWrite( uint8_t charPositionX, uint8_t charPositionY )
 
 void displayStringWrite( const char * str )
 {
+    pcSerialComStringWrite(str);
+    pcSerialComStringWrite("\r\n");
     while (*str) {
         displayCodeWrite(DISPLAY_RS_DATA, *str++);
     }
